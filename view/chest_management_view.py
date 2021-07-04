@@ -4,10 +4,10 @@ import os
 #print('View imported correctly')
 
 def clear():
-    if name == 'nt':
-        _ = system('cls')
+    if os.name == 'nt':
+        _ = os.system('cls')
     else:
-        _ = system('clear')
+        _ = os.system('clear')
 
 def show_menu_view(menu):
     for option, valeur in menu.items():
@@ -85,6 +85,16 @@ def enter_new_player():
 def is_digit(input):
     if input.strip().isdigit():
         return True
+
+def display_match(games,liste_joueurs):
+    clear()
+    compteur = 1
+    for match in (games):
+        print('Match ' + str(compteur))
+        print(liste_joueurs[match[0][0]].nom + ' ' + str(liste_joueurs[match[0][0]].points) + ' va affronter ' + liste_joueurs[match[1][0]].nom + ' ' + str(
+            liste_joueurs[match[1][0]].points) + '\n')
+        compteur += 1
+    input("Appuyez sur Entrée pour ajouter les résultats.")
 
 def tournament_creator_view():
     questions = {'nom': 'Nom du tournoi :', 'lieu': 'Lieu du tournoi :', 'date': 'Date du tournoi ( JJ/MM/AA ):', 'tours':

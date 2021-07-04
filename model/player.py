@@ -8,7 +8,7 @@ class Player:
         self.prenom = prenom
         self.date = date
         self.sexe = sexe
-       # self.points = 0
+        self.points = 0
         self.classement = 0
 
         #print(self.nom + ' ' + self.prenom + ' a reçu ' + str(points) + ' points.')

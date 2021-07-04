@@ -11,10 +11,10 @@ gb_players = []
 
 
 
-def create_pairs(t, phase):
+def create_pairs(t):
     global gb_players
     # print("Le tournoi en est à la phase :" + str(phase))
-    if phase == 1:
+    if len(t.rounds) == 0:
         # Sorting players by points
         #  sorted_ply = sorted(t.players, key = lambda ply: ply.points)
         # Trier selon le rank
@@ -29,9 +29,8 @@ def create_pairs(t, phase):
             match = ([sorted_players[player_index].GetID(gb_players),0], [sorted_players[player_index + middle].GetID(gb_players),0]) # L'index + la moitié
             id = sorted_players[player_index].GetID(gb_players)
             id2 = sorted_players[player_index + middle].GetID(gb_players)
-            print("DANS LA LISTE GLOBALE DES JOUEURS, QUI DOIT ETRE PAREIL :")
-            print(gb_players[id].nom + ' VS ' + gb_players[id2].nom)
-
+            #print("DANS LA LISTE GLOBALE DES JOUEURS, QUI DOIT ETRE PAREIL :")
+            #print(gb_players[id].nom + ' VS ' + gb_players[id2].nom)
             games.append(match)
         return games
     else:
@@ -55,6 +54,27 @@ def create_pairs(t, phase):
                # t.rounds[int(phase)] = games
         return games
 
+def handle_match(games, tournoi):
+    round = {}
+    now = datetime.datetime.now()
+    round['idx'] = 'Roundc ' + str(len(tournoi.rounds))
+    round['start'] = str(now.hour) + ':' + str(now.minute)
+    round['games'] = []
+    #print(round)
+    print(games)
+    for i in range(0,len(games)):
+        ply1_idx = (games[i][0][0])
+        ply2_idx = (games[i][1][0])
+        print(ply1_idx,ply2_idx)
+        matchup = ([ply1_idx], [ply2_idx])
+        # Let's increment i since we don't want our first match to be match 0
+        round['games'].insert(i + 1,matchup)
+    display_match(games,gb_players)
+    round['end'] = str(now.hour) + ':' + str(now.minute)
+    tournoi.rounds.append(round)
+    print(tournoi.rounds)
+    #save(tournoi)
+    #save_classement(tournoi)
 
 def play_tournament():
     #playing_tournament = True
@@ -72,10 +92,12 @@ def play_tournament():
                 str(len(tournoi.players)) + ' )' )
         return None
     print('Vous jouez ' + tournoi.nom)
-    print(tournoi.rounds)
-    newgames = create_pairs(tournoi, tournoi.phase)
-    print(newgames)
-    #handle_match(newgames, t)
+    #print(tournoi.rounds)
+    round = create_pairs(tournoi)
+   # tournoi.rounds.append(newgames)
+    print(str(len(tournoi.rounds)) + " rounds trouvés dans le tournoi")
+     #print(tournoi.rounds)
+    handle_match(round,tournoi)
 
 def add_player():
     ply = enter_new_player()
