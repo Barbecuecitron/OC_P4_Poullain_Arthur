@@ -1,14 +1,27 @@
 from view.chest_management_view import *
 from model.tournament import *
 import os.path
-from os import listdir
-from tinydb import TinyDB, Query
-import random
+from tinydb import TinyDB
 import datetime
 
 gb_tournaments = []
 gb_players = []
 
+
+def did_player_already_gamed(player1, player2, tournament):
+    for chess_round in tournament.rounds:
+        for game in chess_round["games"]:
+            if game[0][0] == player1 and game[1][0] == player2 \
+                    or game[1][0] == player1 and game[0][0] == player2:
+                return True
+    return False
+
+
+def is_player_already_in_a_game(player, games):
+    for game in games:
+        if game[0][0] == player or game[1][0] == player:
+            return True
+    return False
 
 
 def create_pairs(t):
@@ -23,86 +36,104 @@ def create_pairs(t):
         middle = length // 2
         first_half = sorted_players[:middle]  # slice first half
         second_half = sorted_players[middle:]  # slice 2nd half
-        #matches_from_round = []
+        # matches_from_round = []
         games = []
-        for player_index in range(0,len(first_half)):
-            match = ([sorted_players[player_index].GetID(gb_players),0], [sorted_players[player_index + middle].GetID(gb_players),0]) # L'index + la moitié
-            id = sorted_players[player_index].GetID(gb_players)
-            id2 = sorted_players[player_index + middle].GetID(gb_players)
-            #print("DANS LA LISTE GLOBALE DES JOUEURS, QUI DOIT ETRE PAREIL :")
-            #print(gb_players[id].nom + ' VS ' + gb_players[id2].nom)
+        for player_index in range(0, len(first_half)):
+            match = ([sorted_players[player_index].GetID(gb_players), 0],
+                     [sorted_players[player_index + middle].GetID(gb_players), 0])  # L'index + la moitié
+          #  id = sorted_players[player_index].GetID(gb_players)
+           # id2 = sorted_players[player_index + middle].GetID(gb_players)
             games.append(match)
         return games
     else:
-        sorted_players = sorted(t.players, key=lambda ply: (ply.points, ply.classement), reverse=True) #/!\ Recalculer les points à partir de l'historique des matchs
+        sorted_players = sorted(t.players, key=lambda ply: (ply.points, ply.classement),
+                                reverse=True)  # /!\ Recalculer les points à partir de l'historique des matchs
         games = []
         for player_index in range(0, len(sorted_players)):
-            if is_player_already_in_a_game(sorted_players[player_index], games):
+            if is_player_already_in_a_game(sorted_players[player_index].GetID(gb_players), games):
                 continue
 
             for opposite_player_index in range(0, len(sorted_players)):
                 # Not the same player
                 # Opposite player not already in a game this round
                 # Both player not already games together
-                if sorted_players[player_index] != sorted_players[opposite_player_index] \
-                        and not is_player_already_in_a_game(sorted_players[opposite_player_index], games) \
-                        and not did_player_already_gamed(sorted_players[player_index],sorted_players[opposite_player_index], t):
+                if sorted_players[player_index].GetID(gb_players) != sorted_players[opposite_player_index].GetID(
+                        gb_players) \
+                        and not is_player_already_in_a_game(sorted_players[opposite_player_index].GetID(gb_players),
+                                                            games) \
+                        and not did_player_already_gamed(sorted_players[player_index].GetID(gb_players),
+                                                         sorted_players[opposite_player_index].GetID(gb_players), t):
                     games.append(
-                        ([sorted_players[player_index], 0], [sorted_players[opposite_player_index], 0]))
+                        ([sorted_players[player_index].GetID(gb_players), 0],
+                         [sorted_players[opposite_player_index].GetID(gb_players), 0]))
 
                     break
-               # t.rounds[int(phase)] = games
+            # t.rounds[int(phase)] = games
         return games
+
 
 def handle_match(games, tournoi):
     round = {}
     now = datetime.datetime.now()
-    round['idx'] = 'Roundc ' + str(len(tournoi.rounds))
+    round['idx'] = 'Round ' + str(len(tournoi.rounds))
     round['start'] = str(now.hour) + ':' + str(now.minute)
     round['games'] = []
-    #print(round)
-    print(games)
-    for i in range(0,len(games)):
+
+    for i in range(0, len(games)):
         ply1_idx = (games[i][0][0])
         ply2_idx = (games[i][1][0])
-        print(ply1_idx,ply2_idx)
-        matchup = ([ply1_idx], [ply2_idx])
+        matchup = ([ply1_idx, False], [ply2_idx, False])
         # Let's increment i since we don't want our first match to be match 0
-        round['games'].insert(i + 1,matchup)
-    display_match(games,gb_players)
+        round['games'].insert(i + 1, matchup)
+
+    display_match(games, gb_players)
     round['end'] = str(now.hour) + ':' + str(now.minute)
+
+    for i in range(0, len(tournoi.players) // 2):
+        #    print(round['games'][i][0])
+        #    print(round['games'][i][1])
+        a, b = pick_results((round['games'][i][0], round['games'][i][1]), gb_players)
+        round['games'][i][0][1] = a
+        round['games'][i][1][1] = b
+        add_point(round['games'][i][0][0], a)
+        add_point(round['games'][i][1][0], b)
     tournoi.rounds.append(round)
-    print(tournoi.rounds)
-    #save(tournoi)
-    #save_classement(tournoi)
+
+
+def add_point(player_idx, points):
+    global gb_players
+    print(gb_players[player_idx].nom + ' ' + gb_players[player_idx].prenom + " a reçu : " + str(points) + " points !")
+    gb_players[player_idx].points += points
+
 
 def play_tournament():
-    #playing_tournament = True
-    #while playing_tournament:
     tournoi_idx = pick_tournament()
     if tournoi_idx is None:
         return None
     tournoi = gb_tournaments[tournoi_idx]
     if len(tournoi.players) < 4:
-        display("ERROR",'Ce tournoi ne comporte que ' + str(len(tournoi.players)) + ' joueurs. Veuillez en '
-                                                                                    'ajouter pour continuer.')
+        display("ERROR", 'Ce tournoi ne comporte que ' + str(len(tournoi.players)) + ' joueurs. Veuillez en '
+                                                                                     'ajouter pour continuer.')
         return None
     if (len(tournoi.players) % 2) != 0:
         display("ERROR", "Impossible de commencer un tournoi comportant un nombre de joueurs impair ( " +
-                str(len(tournoi.players)) + ' )' )
+                str(len(tournoi.players)) + ' )')
         return None
     print('Vous jouez ' + tournoi.nom)
-    #print(tournoi.rounds)
     round = create_pairs(tournoi)
-   # tournoi.rounds.append(newgames)
+    if len(round) < 2:
+        display("ERROR", "Tous les matchs de " + tournoi.nom + " ont été joué.")
+        display("SUCCESS", tournoi.nom + " est désormais terminé." )
+        return None
     print(str(len(tournoi.rounds)) + " rounds trouvés dans le tournoi")
-     #print(tournoi.rounds)
-    handle_match(round,tournoi)
+    handle_match(round, tournoi)
+
 
 def add_player():
     ply = enter_new_player()
     ply_obj = Player(ply['nom'], ply['prenom'], ply['date'], ply['sexe'])
     gb_players.append(ply_obj)
+
 
 def add_player_to_tournament():
     global gb_players
@@ -112,8 +143,7 @@ def add_player_to_tournament():
         return False
     tournoi = gb_tournaments[tournoi_picker]
 
-    ply_picker = pick_player(gb_players,tournoi)
-    print(ply_picker)
+    ply_picker = pick_player(gb_players, tournoi)
     if ply_picker is None:
         return False
     else:
@@ -122,10 +152,9 @@ def add_player_to_tournament():
         print("Ce tournoi comporte dèja 8 joueurs")
         return False
     else:
-        print('Vous avez ajouté ' + ply.prenom  + ' ' + ply.nom + "" + ' au tournoi : ' + tournoi.nom)
+        print('Vous avez ajouté ' + ply.prenom + ' ' + ply.nom + "" + ' au tournoi : ' + tournoi.nom)
         tournoi.players.append(ply)
-        print('Le tournoi ' + tournoi.nom + ' comporte désormais ' + str(len(tournoi.players)) + ' / 8 ' + ' joueurs.' )
-
+        print('Le tournoi ' + tournoi.nom + ' comporte désormais ' + str(len(tournoi.players)) + ' / 8 ' + ' joueurs.')
 
 
 def save():
@@ -133,15 +162,16 @@ def save():
     spark_home = os.path.abspath(os.path.join(os.getcwd(), '../joueurs'))
     db_file_name = 'classement'
     db = TinyDB(spark_home + '/' + db_file_name + '.json')
-    #ply = enter_new_player()
     players_db = db.table('players_classement')
     players_db.truncate()
     for player_to_save in gb_players:
         serialized_player = player_to_save.Serialize()
         players_db.insert(serialized_player)
 
+
 def get_menu_option():
     pass
+
 
 def create_and_save_tournament():
     tournament = tournament_creator_view()
@@ -155,6 +185,7 @@ def create_and_save_tournament():
     tournament_table.insert(tournament)
     print('Le tournoi a été sauvegardé')
 
+
 def pick_tournament():
     global gb_tournaments
     if len(gb_tournaments) < 1:
@@ -164,6 +195,7 @@ def pick_tournament():
     tournoi_idx = pick_tournament_to_load(gb_tournaments)
     tournoi = tournoi_idx
     return tournoi
+
 
 def quitter():
     quit()
@@ -181,29 +213,29 @@ def init_tournaments():
         t = TinyDB(spark_home + '/' + tournament_file).table('tournament').all()[0]
         tournament = Tournament(t['nom'], t['lieu'], t['date'], t['tours'], t['temps'], t['desc'])
         gb_tournaments.append(tournament)
-        #print(gb_tournaments)
-    display('SUCCESS',str(len(gb_tournaments)) + ' tournois trouvés dans la db')
+    display('SUCCESS', str(len(gb_tournaments)) + ' tournois trouvés dans la db')
+
 
 def init_players():
     global gb_players
     db = TinyDB(os.path.abspath(os.path.join(os.getcwd(), '../joueurs/classement.json')))
     if len((db.table('players_classement'))) < 1:
         print("Il n'y a aucun joueur dans le classement.")
-   # ply = select_player_to_import(db.table('players_classement'))
     for ply in db.table('players_classement'):
-        ply_obj = Player(ply['nom'],ply['prenom'],ply['date'],ply['sexe'])
+        ply_obj = Player(ply['nom'], ply['prenom'], ply['date'], ply['sexe'])
         gb_players.append(ply_obj)
-    display('SUCCESS',str(len(gb_players)) + ' joueurs ont été trouvés dans la db')
+    display('SUCCESS', str(len(gb_players)) + ' joueurs ont été trouvés dans la db')
     pass
+
 
 def build_menu():
     menu_options = {
-        "1" : {'nom': "Ajouter un joueur dans la DB", 'func': add_player},
+        "1": {'nom': "Ajouter un joueur dans la DB", 'func': add_player},
         "2": {'nom': "Ajouter un joueur  à un tournoi", 'func': add_player_to_tournament},
-        "3" : {'nom': "Créer un tournoi", 'func': create_and_save_tournament},
-        "4" : {'nom': "Jouer un tournoi", 'func': play_tournament},
-        "5" : {'nom': "Charger les tournois", "func": init_tournaments},
-        "6" : {'nom': "Sauvegarder", "func": save}
+        "3": {'nom': "Créer un tournoi", 'func': create_and_save_tournament},
+        "4": {'nom': "Jouer un tournoi", 'func': play_tournament},
+        "5": {'nom': "Charger les tournois", "func": init_tournaments},
+        "6": {'nom': "Sauvegarder", "func": save}
     }
     menu_options['q'] = {'nom': 'Quitter', 'func': quitter}
     return menu_options
@@ -213,12 +245,15 @@ def main():
     init_tournaments()
     init_players()
     running = True
-    while running :
+    while running:
         choix = show_menu_view(build_menu())
-        if choix is not False:
-            choix()
-        else:
+        if choix is None:
+            continue
+        elif choix is False:
             running = False
+        else:
+            choix()
+
 
 if __name__ == '__main__':
     main()
