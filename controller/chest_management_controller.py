@@ -1,9 +1,12 @@
-from model.round import *
-from model.player import *
-from model.tournament import *
-from helpers.notify_func import *
-from tinydb import TinyDB
 import datetime
+import os
+
+from tinydb import TinyDB
+
+from helpers.notify_func import notify
+from model.player import Player
+from model.round import Round
+from model.tournament import Tournament
 
 gb_tournaments = []
 gb_players = []
@@ -39,25 +42,29 @@ def create_pairs(t):
         games = []
         for player_index in range(0, len(first_half)):
             match = ([sorted_players[player_index], 0],
-                     [sorted_players[player_index + middle], 0])  # L'index + la moitié
+                     [sorted_players[player_index + middle],
+                      0])  # L'index + la moitié
             games.append(match)
         return games
     else:
-        sorted_players = sorted(t.players, key=lambda ply: ply.classement,  # Trier en fonction du classement
+        sorted_players = sorted(t.players, key=lambda ply: ply.classement,
+                                # Trier en fonction du classement
                                 reverse=True)
         games = []
         for player_index in range(0, len(sorted_players)):
-            if is_player_already_in_a_game(sorted_players[player_index], games):
+            if is_player_already_in_a_game(sorted_players[player_index],
+                                           games):
                 continue
             for opposite_player_index in range(0, len(sorted_players)):
                 # Not the same player
                 # Opposite player not already in a game this round
                 # Both player not already matched together
-                if sorted_players[player_index] != sorted_players[opposite_player_index] \
-                        and not is_player_already_in_a_game(sorted_players[opposite_player_index],
-                                                            games) \
-                        and not did_player_already_gamed(sorted_players[player_index],
-                                                         sorted_players[opposite_player_index], t):
+                if sorted_players[player_index] != sorted_players[
+                    opposite_player_index] and not is_player_already_in_a_game(
+                        sorted_players[opposite_player_index],
+                        games) and not did_player_already_gamed(
+                        sorted_players[player_index],
+                        sorted_players[opposite_player_index], t):
                     games.append(
                         ([sorted_players[player_index], 0],
                          [sorted_players[opposite_player_index], 0]))
@@ -66,21 +73,21 @@ def create_pairs(t):
         return games
 
 
-# Creates, handles and ends our Round
+# Create & handle our round matches
 def handle_match(games, tournoi):
     global gb_tournaments
     global gb_players
     now = datetime.datetime.now()
     round_idx = 'Round ' + str(len(tournoi.rounds) + 1)
     start_time = str(now.hour) + ':' + str(now.minute)
-    round = Round(round_idx, start_time)
+    chess_round = Round(round_idx, start_time)
 
     for i in range(0, len(games)):
         ply1_idx = (games[i][0][0])
         ply2_idx = (games[i][1][0])
         matchup = ([ply1_idx, False], [ply2_idx, False])
-        round.games.insert(i, matchup)
-    return round
+        chess_round.games.insert(i, matchup)
+    return chess_round
 
 
 # Validity checks & plays the tournament match
@@ -88,26 +95,30 @@ def play_tournament(tournoi):
     if tournoi is None:
         return None
     if len(tournoi.players) < 4:
-        notify("ERROR", 'Ce tournoi ne comporte que ' + str(len(tournoi.players)) + ' joueurs. Veuillez en '
-                                                                                    'ajouter pour continuer.')
+        notify("ERROR", 'Ce tournoi ne comporte que ' + str(
+            len(tournoi.players)) + ' joueurs. Veuillez en '
+                                    'ajouter pour continuer.')
         return None
     if (len(tournoi.players) % 2) != 0:
-        notify("ERROR", "Impossible de commencer un tournoi comportant un nombre de joueurs impair ( " +
+        notify("ERROR",
+               "Impossible de commencer un tournoi "
+               "comportant un nombre de joueurs impair ( " +
                str(len(tournoi.players)) + ' )')
         return None
     print('Vous jouez ' + tournoi.nom)
-    round = create_pairs(tournoi)
-    if len(round) < 2:
+    chess_round = create_pairs(tournoi)
+    if len(chess_round) < 2:
         notify("ERROR", "Tous les matchs de " + tournoi.nom + " ont été joué.")
         notify("SUCCESS", tournoi.nom + " est terminé")
         return None
-    Notify('SUCCESS', str(len(tournoi.rounds)) + " rounds trouvés dans le tournoi")
-    return round, tournoi
+    notify('SUCCESS',
+           str(len(tournoi.rounds)) + " rounds trouvés dans le tournoi")
+    return chess_round, tournoi
 
 
 # Adds a round to a tournament
-def add_round(tournoi, round):
-    tournoi.rounds.append(round)
+def add_round(tournoi, chess_round):
+    tournoi.rounds.append(chess_round)
 
 
 # Add a new player
@@ -122,7 +133,7 @@ def add_player_to_tournament(tournoi, ply_picker):
     # ply_picker = pick_player(gb_players, tournoi)
     ply = gb_players[ply_picker]
     if len(tournoi.players) > 7:
-        Notify("ERROR", "Ce tournoi comporte dèja 8 joueurs")
+        notify("ERROR", "Ce tournoi comporte dèja 8 joueurs")
         return False
     else:
         tournoi.players.append(ply)
@@ -147,7 +158,8 @@ def get_player_id_from_mapping(player):
             return player_id
 
 
-# Returns a dict copy of a tournament object, including serialized players & serialized rounds
+# Returns a dict copy of a tournament object,
+# including serialized players & serialized rounds
 def serialize(tournament):
     serialized_t = {
         'nom': tournament.nom,
@@ -168,15 +180,16 @@ def serialize(tournament):
             serialized_t['players'].append(plyidx)
 
     if tournament.rounds is not None:
-        for round in tournament.rounds:
+        for chess_round in tournament.rounds:
             serialized_round = {}
-            serialized_round['idx'] = round.idx
-            serialized_round['start'] = round.start
+            serialized_round['idx'] = chess_round.idx
+            serialized_round['start'] = chess_round.start
             serialized_round['games'] = []
-            serialized_round['end'] = round.end
-            for game in round.games:
-                matchup = ([get_player_id_from_mapping(game[0][0]), game[0][1]],
-                           [get_player_id_from_mapping(game[1][0]), game[1][1]])
+            serialized_round['end'] = chess_round.end
+            for game in chess_round.games:
+                matchup = (
+                    [get_player_id_from_mapping(game[0][0]), game[0][1]],
+                    [get_player_id_from_mapping(game[1][0]), game[1][1]])
                 serialized_round['games'].append(matchup)
             serialized_t['rounds'].append(serialized_round)
 
@@ -227,6 +240,7 @@ def load():
     db = TinyDB('sauvegardes/sauvegarde.json')
     players_db = db.table('players_list')
     tournaments_db = db.table('tournaments')
+
     if len(players_db) < 1:
         notify('ERROR', "Aucun joueur n'a été trouvé dans la base de données.")
     else:
@@ -237,39 +251,44 @@ def load():
         notify("SUCCESS", str(len(gb_players)) + " joueurs ont été chargés.")
 
     if len(tournaments_db) < 1:
-        notify('ERROR', "Aucun tournoi n'a été trouvé dans la base de données.")
+        notify('ERROR',
+               "Aucun tournoi n'a été trouvé dans la base de données.")
     else:
         players_to_load = []
         for t in tournaments_db:
             for ply in t['players']:
                 players_to_load.append(gb_players[ply])
-            t_obj = Tournament(t['nom'], t['lieu'], t['date'], t['tours'], t['rounds'], players_to_load, t['temps'],
+            t_obj = Tournament(t['nom'], t['lieu'], t['date'], t['tours'],
+                               t['rounds'], players_to_load, t['temps'],
                                t['desc'])
             if t_obj.rounds is not None:
                 rounds_to_load = []
-                for round in t_obj.rounds:
-                    round_obj = Round(round['idx'], round['start'])
+                for chess_round in t_obj.rounds:
+                    round_obj = Round(chess_round['idx'], chess_round['start'])
                     round_obj.games = []
-                    round_obj.end = round['end']
-                    for game in round['games']:
+                    round_obj.end = chess_round['end']
+                    for game in chess_round['games']:
                         game[0][0] = gb_players[game[0][0]]
                         game[1][0] = gb_players[game[1][0]]
 
-                    round_obj.games = round['games']
+                    round_obj.games = chess_round['games']
                     rounds_to_load.append(round_obj)
 
                 t_obj.rounds = rounds_to_load
             # Add our loaded round object from the db to our tournament object
             gb_tournaments.append(t_obj)
-        notify("SUCCESS", str(len(gb_tournaments)) + " tournois ont été chargés.")
+        notify("SUCCESS",
+               str(len(gb_tournaments)) + " tournois ont été chargés.")
 
 
 def create_tournament(tournament):
     global gb_tournaments
     if tournament is None:
         return None
-    tournament_obj = Tournament(tournament['nom'], tournament['lieu'], tournament['date'], tournament['tours'],
-                                tournament['rounds'], tournament['players'], tournament['temps'], tournament['desc'])
+    tournament_obj = Tournament(tournament['nom'], tournament['lieu'],
+                                tournament['date'], tournament['tours'],
+                                tournament['rounds'], tournament['players'],
+                                tournament['temps'], tournament['desc'])
     gb_tournaments.append(tournament_obj)
     notify("SUCCESS", tournament_obj.nom + ' a bien été crée !')
 
@@ -283,30 +302,24 @@ def pick_tournament(tournoi_idx):
 
 
 def quitter():
-    Notify('SUCCESS', 'Vous avez quitté le menu')
+    notify('SUCCESS', 'Vous avez quitté le menu')
     quit()
     pass
 
 
-# Loads every player found in the database into an actual object, appends it to gb_players
+# Loads every player found in the database into an actual object,
+# appends it to gb_players
 def init_players():
     global gb_players
-    db = TinyDB(os.path.abspath(os.path.join(os.getcwd(), '../sauvegardes/sauvegarde.json')))
+    db = TinyDB(os.path.abspath(
+        os.path.join(os.getcwd(), '../sauvegardes/sauvegarde.json')))
     if db is not None:
         if len((db.table('players_classement'))) < 1:
-            Notify("ERROR", "Il n'y a aucun joueur dans le classement.")
+            notify("ERROR", "Il n'y a aucun joueur dans le classement.")
 
     for ply in db.table('players_classement'):
         ply_obj = Player(ply['nom'], ply['prenom'], ply['date'], ply['sexe'])
         gb_players.append(ply_obj)
-    notify('SUCCESS', str(len(gb_players)) + ' joueurs ont été trouvés dans la db')
+    notify('SUCCESS',
+           str(len(gb_players)) + ' joueurs ont été trouvés dans la db')
     pass
-
-
-# Build the menu & link it to defined functions
-
-
-# Handles menu choices
-
-if __name__ == '__main__':
-    main()

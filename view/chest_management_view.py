@@ -80,7 +80,7 @@ def show_menu_view(menu):
     return menu[res]['func']
 
 
-# Valide debugged
+# Valid debugged
 def pick_tournament_view():
     tournoi_idx = pick_tournament_to_load()
     print(tournoi_idx)
