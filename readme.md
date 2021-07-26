@@ -15,6 +15,10 @@ Gestionnaire de tournoi d'échecs
 * Input keys from the menu to access certain part.
 * The players file will be stored in : Projet 4\joueurs
 * Tournaments files will be stored in : Projet 4\sauvegardes
+--
+# Generate Flake-8 HTML reports
+* Install flake-8 HTML ( ```$ pip install flake8-html  ``` )
+* Run ```$ flake8 --format=html --htmldir=flake-report ```
 ---
 ## Contributors
 * Arthur P
