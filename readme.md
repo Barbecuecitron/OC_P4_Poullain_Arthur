@@ -5,7 +5,7 @@ Version 1.0.999998
 Gestionnaire de tournoi d'échecs
 ---
 # Installation guide :
-* Install Python3.8 : ``` $ sudo apt install python3.8````
+* Install Python3.8 : ```$ sudo apt install python3.8```
 * Install the pip package if you don't have it : ``` $ sudo apt install python3-pip ```
 * Clone the Repository : ```$ git clone https://github.com/Barbecuecitron/OC_P4_Poullain_Arthur ```
 * Run the following command to install the environment from the repository : ``` $ pip3 install -r requirements.txt ```
