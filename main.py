@@ -1,5 +1,4 @@
-from view.chest_management_view import *
-#from controller.chest_management_controller import *
+from view.chest_management_view import show_menu_view, build_menu
 
 
 def main():

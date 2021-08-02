@@ -12,6 +12,14 @@ gb_tournaments = []
 gb_players = []
 
 
+# Clears the console
+def clear():
+    if os.name == 'nt':
+        _ = os.system('cls')
+    else:
+        _ = os.system('clear')
+
+
 # Check if a player already fought another one
 def did_player_already_gamed(player1, player2, tournament):
     for chess_round in tournament.rounds:
@@ -95,6 +103,7 @@ def play_tournament(tournoi):
     if tournoi is None:
         return None
     if len(tournoi.players) < 4:
+        clear()
         notify("ERROR", 'Ce tournoi ne comporte que ' + str(
             len(tournoi.players)) + ' joueurs. Veuillez en '
                                     'ajouter pour continuer.')
@@ -192,7 +201,6 @@ def serialize(tournament):
                     [get_player_id_from_mapping(game[1][0]), game[1][1]])
                 serialized_round['games'].append(matchup)
             serialized_t['rounds'].append(serialized_round)
-
     return serialized_t
 
 
@@ -227,6 +235,7 @@ def save():
         tournaments_list.append(serialize(tournament))
 
     tournaments_db.insert_multiple(tournaments_list)
+    clear()
     notify("SUCCESS", str(len(gb_tournaments)) + ' tournoi(s) & '
            + str(len(gb_players)) + 'joueur(s) ont été enregistrés.')
 
@@ -248,6 +257,7 @@ def load():
             ply_obj = Player(pl['nom'], pl['prenom'], pl['date'], pl['sexe'])
             ply_obj.classement = pl['classement']
             gb_players.append(ply_obj)
+        clear()
         notify("SUCCESS", str(len(gb_players)) + " joueurs ont été chargés.")
 
     if len(tournaments_db) < 1:
