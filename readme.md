@@ -1,6 +1,7 @@
 # OC_P4_Poullain_Arthur
 Ce projet 4 m'a donné bien du fil à retordre.
 Version 1.0.999998
+Python version used : Python 3.8.5
 ---
 Gestionnaire de tournoi d'échecs
 ---
