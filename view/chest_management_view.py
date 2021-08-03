@@ -156,7 +156,7 @@ def print_rounds(tournament):
         clear()
         print(
             '---------------- ' + tournament.nom.upper() +
-            '-----------------------')
+            ' -----------------------')
         for chess_round in tournament.rounds:
             print("- " + chess_round.idx.upper())
             print(
@@ -267,8 +267,8 @@ def how_should_we_list():
 def pick_results(match):
     choix = [match[0][0], match[1][0], "Match nul"]
     question = 'Attribuez les points du round '
-    notify("SUCCESS", match[0][0].GetName() + ' VS ' + match[1][0].GetName())
-    option, index = pick([choix[0].GetName(), choix[1].GetName(), choix[2]],
+    notify("SUCCESS", match[0][0].get_name() + ' VS ' + match[1][0].get_name())
+    option, index = pick([choix[0].get_name(), choix[1].get_name(), choix[2]],
                          question)
     resa = False
     resb = False
@@ -376,10 +376,11 @@ def list_players():
     else:
         sorted_players = players
     clear()
+    print("-----------------------------------")
     for pl in sorted_players:
         print(
             pl.prenom + " " + pl.nom + " | Classement : " + str(pl.classement))
-    print('\n')
+    print("-----------------------------------")
 
 
 # List every player from a chosen tournament
@@ -408,9 +409,11 @@ def list_players_from_tournament():
     else:
         sorted_players = tournament.players
     clear()
+    print("-----------------------------------")
     for pl in sorted_players:
         print(
             pl.prenom + " " + pl.nom + " | Classement : " + str(pl.classement))
+    print("-----------------------------------")
 
 
 # List every tournament in a convenient manner

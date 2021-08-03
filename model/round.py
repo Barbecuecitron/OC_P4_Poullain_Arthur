@@ -3,4 +3,4 @@ class Round:
         self.idx = idx
         self.start = start
         self.games = []
-        self.end = False
+        self.end = None

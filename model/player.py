@@ -6,11 +6,6 @@ class Player:
         self.sexe = sexe
         self.classement = 0
 
-    def GetID(self, global_players_list):
-        for k, v in enumerate(global_players_list):
-            if v.nom == self.nom and v.prenom == self.prenom:
-                return k
-
-    def GetName(self):
+    def get_name(self):
         name = self.prenom + ' ' + self.nom
         return name

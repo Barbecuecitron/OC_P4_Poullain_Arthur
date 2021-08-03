@@ -19,7 +19,7 @@ Gestionnaire de tournoi d'échecs
 --
 # Generate Flake-8 HTML reports
 * Install flake-8 HTML : ```$ pip install flake8-html  ```
-* Run : ```$ flake8 --format=html --htmldir=flake-report ```
+* Run : ```$ flake8 --max-line-length=119 --format=html --htmldir=flake-report ```
 ---
 ## Contributors
 * Arthur P
