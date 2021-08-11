@@ -1,10 +1,12 @@
-from view.chest_management_view import show_menu_view, build_menu
+from view.chess_management_view import ChessManagementView
 
 
 def main():
     running = True
+    menu_view = ChessManagementView()
     while running:
-        choix = show_menu_view(build_menu())
+
+        choix = menu_view.show_menu_view(menu_view.build_menu())
         if choix is None:
             continue
         elif choix is False:
